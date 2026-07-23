@@ -1,0 +1,6 @@
+{
+  "name": "cocok.in - E-Commerce Platform & Admin",
+  "description": "Multi-role e-commerce platform for cocok.in with mobile app experience (Buyer, Seller, Courier) and Admin Web Dashboard with Gemini AI integrations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
