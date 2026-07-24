@@ -8,6 +8,9 @@ interface HomeScreenProps {
   onAddToCart: (product: Product) => void;
   onToggleWishlist: (product: Product) => void;
   wishlistIds: string[];
+  onOpenProduct: (product: Product) => void;
+  onOpenPromotions: () => void;
+  onOpenFlashSale: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -16,6 +19,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onAddToCart,
   onToggleWishlist,
   wishlistIds,
+  onOpenProduct,
+  onOpenPromotions,
+  onOpenFlashSale,
 }) => {
   return (
     <div className="space-y-6 pb-20">
@@ -32,6 +38,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             Bayar praktis & aman menggunakan Saldo Wallet cocok.in Escrow Hold
           </p>
         </div>
+        <button
+          onClick={onOpenPromotions}
+          className="mt-4 rounded-xl bg-white/20 px-3 py-2 text-sm font-semibold text-white backdrop-blur"
+        >
+          Lihat promo hari ini
+        </button>
         <div className="absolute right-3 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
       </div>
 
@@ -112,6 +124,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={onOpenFlashSale}
+            className="rounded-2xl border border-orange-200 bg-orange-50 p-3 text-left"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-wide text-orange-600">Flash Sale</p>
+            <p className="mt-1 text-sm font-bold text-slate-900">Diskon hingga 50%</p>
+          </button>
           {products.filter(p => p.isApproved).map((prod) => {
             const isFav = wishlistIds.includes(prod.productId);
             return (
@@ -120,7 +139,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between"
               >
                 <div className="relative">
-                  <img src={prod.images[0]} alt={prod.name} className="w-full h-36 object-cover" />
+                  <button onClick={() => onOpenProduct(prod)} className="block w-full">
+                    <img src={prod.images[0]} alt={prod.name} className="w-full h-36 object-cover" />
+                  </button>
                   <button
                     onClick={() => onToggleWishlist(prod)}
                     className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur rounded-full text-slate-600 hover:text-red-500 transition-colors shadow-sm cursor-pointer"
@@ -134,9 +155,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     <span className="text-[9px] font-bold uppercase text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
                       {prod.category}
                     </span>
-                    <h4 className="text-xs font-bold text-slate-900 mt-1 line-clamp-2 leading-snug">
-                      {prod.name}
-                    </h4>
+                    <button onClick={() => onOpenProduct(prod)} className="mt-1 text-left">
+                      <h4 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug">
+                        {prod.name}
+                      </h4>
+                    </button>
                     <p className="text-[10px] text-slate-500 mt-0.5">{prod.sellerName}</p>
                   </div>
 

@@ -10,6 +10,7 @@ import { AdminSettings } from './components/admin/AdminSettings';
 import { AdminLogin } from './components/admin/AdminLogin';
 
 import { MobileShell } from './components/mobile/MobileShell';
+import { AuthScreen, AuthMode } from './components/mobile/AuthScreen';
 import { HomeScreen } from './components/mobile/HomeScreen';
 import { SearchScreen } from './components/mobile/SearchScreen';
 import { CartScreen } from './components/mobile/CartScreen';
@@ -19,8 +20,29 @@ import { ProfileScreen } from './components/mobile/ProfileScreen';
 import { WalletScreen } from './components/mobile/WalletScreen';
 import { SellerDashboard } from './components/mobile/SellerDashboard';
 import { CourierDashboard } from './components/mobile/CourierDashboard';
+import { OnboardingScreen } from './components/mobile/OnboardingScreen';
+import { ProductDetailScreen } from './components/mobile/ProductDetailScreen';
+import { PromotionsScreen } from './components/mobile/PromotionsScreen';
+import { OrdersScreen } from './components/mobile/OrdersScreen';
+import { VerificationScreen } from './components/mobile/VerificationScreen';
+import { SupportScreen } from './components/mobile/SupportScreen';
+import { ReviewsScreen } from './components/mobile/ReviewsScreen';
+import { PaymentScreen } from './components/mobile/PaymentScreen';
+import { SellerOnboardingScreen } from './components/mobile/SellerOnboardingScreen';
+import { NotificationsScreen } from './components/mobile/NotificationsScreen';
+import { VouchersScreen } from './components/mobile/VouchersScreen';
+import { SecuritySettingsScreen } from './components/mobile/SecuritySettingsScreen';
+import { ChatSupportScreen } from './components/mobile/ChatSupportScreen';
+import { AddressBookScreen } from './components/mobile/AddressBookScreen';
+import { OrderDetailScreen } from './components/mobile/OrderDetailScreen';
+import { FlashSaleScreen } from './components/mobile/FlashSaleScreen';
+import { DisputeScreen } from './components/mobile/DisputeScreen';
 
 import { Smartphone, Monitor, ShieldCheck, AlertCircle, Sparkles } from 'lucide-react';
+import { marketplaceDataService } from './services/marketplaceData';
+import { ThemeToggle } from './components/mobile/ThemeToggle';
+import { firebaseService } from './services/firebaseService';
+import { apiService } from './services/apiService';
 
 export default function App() {
   // App View Mode: 'mobile' or 'admin'
@@ -36,9 +58,33 @@ export default function App() {
   const [disputes, setDisputes] = useState<Dispute[]>(initialDisputes);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [settings, setSettings] = useState<PlatformSettings>(initialSettings);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [transitionKey, setTransitionKey] = useState<number>(0);
 
   // Mobile App State
   const [mobileTab, setMobileTab] = useState<string>('home');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isPromotionsView, setIsPromotionsView] = useState<boolean>(false);
+  const [isOrdersView, setIsOrdersView] = useState<boolean>(false);
+  const [isVerificationView, setIsVerificationView] = useState<boolean>(false);
+  const [isSupportView, setIsSupportView] = useState<boolean>(false);
+  const [isReviewsView, setIsReviewsView] = useState<boolean>(false);
+  const [isPaymentView, setIsPaymentView] = useState<boolean>(false);
+  const [isSellerOnboardingView, setIsSellerOnboardingView] = useState<boolean>(false);
+  const [isNotificationsView, setIsNotificationsView] = useState<boolean>(false);
+  const [isVouchersView, setIsVouchersView] = useState<boolean>(false);
+  const [isSecurityView, setIsSecurityView] = useState<boolean>(false);
+  const [isChatSupportView, setIsChatSupportView] = useState<boolean>(false);
+  const [isAddressView, setIsAddressView] = useState<boolean>(false);
+  const [isOrderDetailView, setIsOrderDetailView] = useState<boolean>(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isFlashSaleView, setIsFlashSaleView] = useState<boolean>(false);
+  const [isDisputeView, setIsDisputeView] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string>('');
+  const [authSuccess, setAuthSuccess] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([
     {
       product: initialProducts[0],
@@ -59,6 +105,121 @@ export default function App() {
 
   // Active user object based on role
   const currentUser = users.find((u) => u.roles.includes(currentRole)) || users[0];
+
+  useEffect(() => {
+    const persisted = marketplaceDataService.load();
+    if (persisted) {
+      setUsers(persisted.users);
+      setProducts(persisted.products);
+      setOrders(persisted.orders);
+      setDisputes(persisted.disputes);
+      setTransactions(persisted.transactions);
+      setSettings(persisted.settings);
+    }
+
+    void Promise.all([apiService.getProducts(), apiService.getOrders()]).then(([productResult, orderResult]) => {
+      if (Array.isArray(productResult) && productResult.length > 0) {
+        setProducts(productResult as Product[]);
+      }
+      if (Array.isArray(orderResult) && orderResult.length > 0) {
+        setOrders(orderResult as Order[]);
+      }
+    });
+
+    void apiService.healthCheck().then((result) => {
+      if (result.ok && result.mode) {
+        setAuthSuccess((prev) => prev || `Server siap: ${result.mode}`);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    marketplaceDataService.save({ users, products, orders, disputes, transactions, settings });
+  }, [users, products, orders, disputes, transactions, settings]);
+
+  useEffect(() => {
+    setTransitionKey((prev) => prev + 1);
+  }, [mobileTab, selectedProduct, isPromotionsView, isOrdersView, isVerificationView, isSupportView, isReviewsView, isPaymentView, isSellerOnboardingView, isNotificationsView, isVouchersView, isSecurityView, isChatSupportView, isAddressView, isOrderDetailView, isFlashSaleView, isDisputeView, isCheckoutView, isWalletView, isSellerView, isCourierView]);
+
+  const handleLogin = async (email: string, password: string) => {
+    const localUser = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (!localUser || password.length < 4) {
+      setAuthError('Email atau password tidak valid.');
+      setAuthSuccess('');
+      return;
+    }
+
+    const firebaseResult = await firebaseService.signIn(email, password);
+    if (firebaseService.isAvailable && firebaseResult.ok) {
+      setAuthError('');
+      setAuthSuccess('Login berhasil via Firebase.');
+    } else if (firebaseService.isAvailable && !firebaseResult.ok) {
+      setAuthError('Kredensial Firebase tidak valid.');
+      setAuthSuccess('');
+      return;
+    }
+
+    const role = localUser.roles.includes('seller') ? 'seller' : localUser.roles.includes('courier') ? 'courier' : 'buyer';
+    void apiService.createSession(localUser.email, role);
+
+    setCurrentRole(role);
+    setIsAuthenticated(true);
+    setAuthError('');
+    setAuthSuccess(`Selamat datang, ${localUser.name}!`);
+    setHasSeenOnboarding(false);
+    setMobileTab('home');
+  };
+
+  const handleRegister = async (name: string, email: string, password: string) => {
+    if (password.length < 4) {
+      setAuthError('Password minimal 4 karakter.');
+      setAuthSuccess('');
+      return;
+    }
+
+    const firebaseResult = await firebaseService.signUp(email, password);
+    if (firebaseService.isAvailable && firebaseResult.ok) {
+      await firebaseService.syncUserProfile(firebaseResult.user.uid, {
+        name,
+        email,
+        role: 'buyer',
+      });
+    } else if (firebaseService.isAvailable && !firebaseResult.ok) {
+      setAuthError('Pendaftaran Firebase gagal.');
+      setAuthSuccess('');
+      return;
+    }
+
+    const newUser: User = {
+      uid: `usr_${Date.now()}`,
+      name,
+      email,
+      phone: '081000000000',
+      roles: ['buyer'],
+      walletBalance: 0,
+      address: 'Alamat belum diisi',
+      isVerified: false,
+      status: 'active',
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+    };
+
+    setUsers((prev) => [newUser, ...prev]);
+    setCurrentRole('buyer');
+    setIsAuthenticated(true);
+    setAuthError('');
+    setAuthSuccess('Akun berhasil dibuat. Silakan lanjut belanja.');
+    setHasSeenOnboarding(false);
+    setMobileTab('home');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setAuthError('');
+    setAuthSuccess('');
+    setAuthMode('login');
+    setHasSeenOnboarding(false);
+    setMobileTab('home');
+  };
 
   // Cart Handlers
   const handleAddToCart = (product: Product) => {
@@ -232,7 +393,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
+    <div className={`min-h-screen ${isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-950 text-slate-100'} font-sans flex flex-col`}>
       {/* Global Top Platform Switcher Header */}
       <header className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
@@ -250,7 +411,9 @@ export default function App() {
         </div>
 
         {/* View Switcher: Mobile App vs Admin Web */}
-        <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-3">
+          <ThemeToggle isDark={isDarkMode} onToggle={() => setIsDarkMode((prev) => !prev)} />
+          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
           <button
             onClick={() => {
               setViewMode('mobile');
@@ -277,16 +440,45 @@ export default function App() {
             <Monitor className="w-4 h-4" />
             <span>💻 Admin Web (/admin_web)</span>
           </button>
+          </div>
         </div>
       </header>
 
       {/* Main View Area */}
       <div className="flex-1">
         {viewMode === 'mobile' ? (
+          !isAuthenticated ? (
+            <AuthScreen
+              mode={authMode}
+              onModeChange={setAuthMode}
+              onLogin={handleLogin}
+              onRegister={handleRegister}
+              errorMessage={authError}
+              successMessage={authSuccess}
+            />
+          ) : (
           <MobileShell
             currentRole={currentRole}
+            isDarkMode={isDarkMode}
             onChangeRole={(role) => {
               setCurrentRole(role);
+              setSelectedProduct(null);
+              setIsPromotionsView(false);
+              setIsOrdersView(false);
+              setIsVerificationView(false);
+              setIsSupportView(false);
+              setIsReviewsView(false);
+              setIsPaymentView(false);
+              setIsSellerOnboardingView(false);
+              setIsNotificationsView(false);
+              setIsVouchersView(false);
+              setIsSecurityView(false);
+              setIsChatSupportView(false);
+              setIsAddressView(false);
+              setIsOrderDetailView(false);
+              setSelectedOrder(null);
+              setIsFlashSaleView(false);
+              setIsDisputeView(false);
               setIsSellerView(false);
               setIsCourierView(false);
               setIsCheckoutView(false);
@@ -295,6 +487,23 @@ export default function App() {
             activeTab={mobileTab}
             setActiveTab={(tab) => {
               setMobileTab(tab);
+              setSelectedProduct(null);
+              setIsPromotionsView(false);
+              setIsOrdersView(false);
+              setIsVerificationView(false);
+              setIsSupportView(false);
+              setIsReviewsView(false);
+              setIsPaymentView(false);
+              setIsSellerOnboardingView(false);
+              setIsNotificationsView(false);
+              setIsVouchersView(false);
+              setIsSecurityView(false);
+              setIsChatSupportView(false);
+              setIsAddressView(false);
+              setIsOrderDetailView(false);
+              setSelectedOrder(null);
+              setIsFlashSaleView(false);
+              setIsDisputeView(false);
               setIsCheckoutView(false);
               setIsWalletView(false);
               setIsSellerView(false);
@@ -302,6 +511,118 @@ export default function App() {
             }}
             cartCount={cart.reduce((a, c) => a + c.quantity, 0)}
           >
+            {hasSeenOnboarding && !isCheckoutView ? (
+              <div key={transitionKey} className="animate-[fadeIn_0.25s_ease-out]">
+                {selectedProduct ? (
+                  <ProductDetailScreen
+                    product={selectedProduct}
+                    isFavorite={wishlistIds.includes(selectedProduct.productId)}
+                    onBack={() => setSelectedProduct(null)}
+                    onToggleWishlist={handleToggleWishlist}
+                    onAddToCart={handleAddToCart}
+                  />
+                ) : isPromotionsView ? (
+                  <PromotionsScreen onBack={() => setIsPromotionsView(false)} />
+                ) : isOrdersView ? (
+                  <OrdersScreen
+                    orders={orders}
+                    onBack={() => setIsOrdersView(false)}
+                    onOpenOrderDetail={(order) => {
+                      setSelectedOrder(order);
+                      setIsOrderDetailView(true);
+                    }}
+                  />
+                ) : isVerificationView ? (
+                  <VerificationScreen onBack={() => setIsVerificationView(false)} />
+                ) : isSupportView ? (
+                  <SupportScreen onBack={() => setIsSupportView(false)} />
+                ) : isReviewsView ? (
+                  <ReviewsScreen onBack={() => setIsReviewsView(false)} />
+                ) : isPaymentView ? (
+                  <PaymentScreen onBack={() => setIsPaymentView(false)} />
+                ) : isSellerOnboardingView ? (
+                  <SellerOnboardingScreen onBack={() => setIsSellerOnboardingView(false)} />
+                ) : isNotificationsView ? (
+                  <NotificationsScreen onBack={() => setIsNotificationsView(false)} />
+                ) : isVouchersView ? (
+                  <VouchersScreen onBack={() => setIsVouchersView(false)} />
+                ) : isOrderDetailView && selectedOrder ? (
+                  <OrderDetailScreen order={selectedOrder} onBack={() => { setIsOrderDetailView(false); setSelectedOrder(null); }} />
+                ) : isFlashSaleView ? (
+                  <FlashSaleScreen onBack={() => setIsFlashSaleView(false)} />
+                ) : isDisputeView ? (
+                  <DisputeScreen onBack={() => setIsDisputeView(false)} />
+                ) : isSecurityView ? (
+                  <SecuritySettingsScreen onBack={() => setIsSecurityView(false)} />
+                ) : isChatSupportView ? (
+                  <ChatSupportScreen onBack={() => setIsChatSupportView(false)} />
+                ) : isAddressView ? (
+                  <AddressBookScreen user={currentUser} onBack={() => setIsAddressView(false)} />
+                ) : (
+                <>
+                {mobileTab === 'home' && (
+                  <HomeScreen
+                    products={products}
+                    aiRecommendations={products.filter((p) => p.isApproved).slice(0, 3)}
+                    onAddToCart={handleAddToCart}
+                    onToggleWishlist={handleToggleWishlist}
+                    wishlistIds={wishlistIds}
+                    onOpenProduct={(product) => setSelectedProduct(product)}
+                    onOpenPromotions={() => {
+                      setSelectedProduct(null);
+                      setIsPromotionsView(true);
+                    }}
+                    onOpenFlashSale={() => {
+                      setSelectedProduct(null);
+                      setIsFlashSaleView(true);
+                    }}
+                  />
+                )}
+                {mobileTab === 'search' && (
+                  <SearchScreen products={products} onAddToCart={handleAddToCart} />
+                )}
+                {mobileTab === 'cart' && (
+                  <CartScreen
+                    cart={cart}
+                    onUpdateQty={handleUpdateQty}
+                    onProceedToCheckout={() => setIsCheckoutView(true)}
+                  />
+                )}
+                {mobileTab === 'wishlist' && (
+                  <WishlistScreen
+                    wishlistProducts={products.filter((p) => wishlistIds.includes(p.productId))}
+                    onAddToCart={handleAddToCart}
+                    onRemoveWishlist={handleToggleWishlist}
+                  />
+                )}
+                {mobileTab === 'profile' && (
+                  <ProfileScreen
+                    user={currentUser}
+                    onOpenWallet={() => setIsWalletView(true)}
+                    onOpenSeller={() => setIsSellerView(true)}
+                    onOpenCourier={() => setIsCourierView(true)}
+                    onOpenOrders={() => setIsOrdersView(true)}
+                    onOpenVerification={() => setIsVerificationView(true)}
+                    onOpenSupport={() => setIsSupportView(true)}
+                    onOpenReviews={() => setIsReviewsView(true)}
+                    onOpenPayment={() => setIsPaymentView(true)}
+                    onOpenSellerOnboarding={() => setIsSellerOnboardingView(true)}
+                    onOpenNotifications={() => setIsNotificationsView(true)}
+                    onOpenVouchers={() => setIsVouchersView(true)}
+                    onOpenSecurity={() => setIsSecurityView(true)}
+                    onOpenChatSupport={() => setIsChatSupportView(true)}
+                    onOpenAddress={() => setIsAddressView(true)}
+                    onOpenDispute={() => setIsDisputeView(true)}
+                    onLogout={handleLogout}
+                  />
+                )}
+                </>
+                )}
+              </div>
+            ) : null}
+            {!hasSeenOnboarding && !isCheckoutView ? (
+              <OnboardingScreen onContinue={() => setHasSeenOnboarding(true)} />
+            ) : null}
             {isCheckoutView ? (
               <CheckoutScreen
                 cart={cart}
@@ -329,45 +650,10 @@ export default function App() {
               <CourierDashboard onBack={() => setIsCourierView(false)} />
             ) : (
               <>
-                {mobileTab === 'home' && (
-                  <HomeScreen
-                    products={products}
-                    aiRecommendations={products.filter((p) => p.isApproved).slice(0, 3)}
-                    onAddToCart={handleAddToCart}
-                    onToggleWishlist={handleToggleWishlist}
-                    wishlistIds={wishlistIds}
-                  />
-                )}
-                {mobileTab === 'search' && (
-                  <SearchScreen products={products} onAddToCart={handleAddToCart} />
-                )}
-                {mobileTab === 'cart' && (
-                  <CartScreen
-                    cart={cart}
-                    onUpdateQty={handleUpdateQty}
-                    onProceedToCheckout={() => setIsCheckoutView(true)}
-                  />
-                )}
-                {mobileTab === 'wishlist' && (
-                  <WishlistScreen
-                    wishlistProducts={products.filter((p) => wishlistIds.includes(p.productId))}
-                    onAddToCart={handleAddToCart}
-                    onRemoveWishlist={handleToggleWishlist}
-                  />
-                )}
-                {mobileTab === 'profile' && (
-                  <ProfileScreen
-                    user={currentUser}
-                    onOpenWallet={() => setIsWalletView(true)}
-                    onOpenSeller={() => setIsSellerView(true)}
-                    onOpenCourier={() => setIsCourierView(true)}
-                    onOpenOrders={() => setMobileTab('home')}
-                    onLogout={() => alert('Logout berhasil')}
-                  />
-                )}
               </>
             )}
           </MobileShell>
+          )
         ) : (
           /* Admin Web View */
           <div>

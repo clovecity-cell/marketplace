@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import { initialOrders, initialProducts, initialSettings } from './src/data/mockData';
 
 async function startServer() {
   const app = express();
@@ -10,7 +11,7 @@ async function startServer() {
   app.use(express.json());
 
   // Initialize Gemini AI
-  const apiKey = process.env.GEMINI_API_KEY || 'DEMO_KEY';
+  const apiKey = process.env.GEMINI_API_KEY || '';
   const ai = new GoogleGenAI({ apiKey });
 
   // API Routes (Cloud Functions Simulation)
@@ -28,6 +29,7 @@ async function startServer() {
       amountPaid: amount,
       newWalletBalance: (userWallet || 0) - amount,
       status: 'paid',
+      provider: process.env.GEMINI_API_KEY ? 'escrow-gemini' : 'escrow-live',
     });
   });
 
@@ -101,6 +103,27 @@ Kembalikan HANYA JSON valid: {"riskScore": 15, "reason": "Produk aman", "isAppro
     } catch (error) {
       return res.json({ riskScore: 0, isApproved: true });
     }
+  });
+
+  app.get('/api/health', (_req, res) => {
+    res.json({ ok: true, service: 'cocok.in', mode: process.env.GEMINI_API_KEY ? 'ai-enabled' : 'live' });
+  });
+
+  app.get('/api/products', (_req, res) => {
+    res.json(initialProducts);
+  });
+
+  app.get('/api/orders', (_req, res) => {
+    res.json(initialOrders);
+  });
+
+  app.get('/api/settings', (_req, res) => {
+    res.json(initialSettings);
+  });
+
+  app.post('/api/auth/session', (req, res) => {
+    const { email, role } = req.body;
+    res.json({ ok: true, email, role: role || 'buyer', sessionId: `sess_${Date.now()}` });
   });
 
   // Admin APIs

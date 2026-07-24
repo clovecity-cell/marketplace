@@ -8,6 +8,17 @@ interface ProfileScreenProps {
   onOpenSeller: () => void;
   onOpenCourier: () => void;
   onOpenOrders: () => void;
+  onOpenVerification: () => void;
+  onOpenSupport: () => void;
+  onOpenReviews: () => void;
+  onOpenPayment: () => void;
+  onOpenSellerOnboarding: () => void;
+  onOpenNotifications: () => void;
+  onOpenVouchers: () => void;
+  onOpenSecurity: () => void;
+  onOpenChatSupport: () => void;
+  onOpenAddress: () => void;
+  onOpenDispute: () => void;
   onLogout: () => void;
 }
 
@@ -17,6 +28,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onOpenSeller,
   onOpenCourier,
   onOpenOrders,
+  onOpenVerification,
+  onOpenSupport,
+  onOpenReviews,
+  onOpenPayment,
+  onOpenSellerOnboarding,
+  onOpenNotifications,
+  onOpenVouchers,
+  onOpenSecurity,
+  onOpenChatSupport,
+  onOpenAddress,
+  onOpenDispute,
   onLogout,
 }) => {
   const isAdmin = user.roles.includes('admin');
@@ -118,10 +140,123 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </button>
         )}
 
-        <button className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer">
+        <button
+          onClick={onOpenVerification}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
           <div className="flex items-center gap-3">
             <Settings className="w-4 h-4 text-slate-500" />
-            <span className="font-semibold">Pengaturan Akun</span>
+            <span className="font-semibold">Verifikasi Akun</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenSupport}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Dukungan Pelanggan</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenChatSupport}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Live Chat Support</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenReviews}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Ulasan Pengguna</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenPayment}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Metode Pembayaran</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenAddress}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Alamat Pengiriman</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenSecurity}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Keamanan Akun</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenDispute}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Refund & Dispute</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenSellerOnboarding}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Daftar Jadi Penjual</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenNotifications}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Notifikasi</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={onOpenVouchers}
+          className="w-full p-3.5 flex items-center justify-between hover:bg-slate-50 text-slate-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Settings className="w-4 h-4 text-slate-500" />
+            <span className="font-semibold">Voucher & Referral</span>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400" />
         </button>

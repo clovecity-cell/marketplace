@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CartItem, User, PlatformSettings } from '../../types';
 import { MapPin, Truck, ShieldCheck, Wallet, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { apiService } from '../../services/apiService';
 
 interface CheckoutScreenProps {
   cart: CartItem[];
@@ -26,18 +27,28 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
   const platformFee = Math.round((subtotal * settings.platformFeePercentage) / 100);
   const grandTotal = subtotal + shippingCost + platformFee;
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (user.walletBalance < grandTotal) {
       setErrorMsg(`Saldo Wallet (Rp ${user.walletBalance.toLocaleString('id-ID')}) tidak cukup untuk total Rp ${grandTotal.toLocaleString('id-ID')}`);
       return;
     }
 
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      const generatedOrderId = `ORD-${Date.now().toString().slice(-6)}`;
-      onPaySuccess(generatedOrderId, grandTotal);
-    }, 1200);
+    setErrorMsg('');
+
+    const generatedOrderId = `ORD-${Date.now().toString().slice(-6)}`;
+    const payment = await apiService.processPayment(generatedOrderId, grandTotal, user.walletBalance);
+
+    if (payment.success || payment.fallback) {
+      setTimeout(() => {
+        setIsProcessing(false);
+        onPaySuccess(generatedOrderId, grandTotal);
+      }, 1200);
+      return;
+    }
+
+    setIsProcessing(false);
+    setErrorMsg(payment.message || 'Pembayaran gagal. Silakan coba lagi.');
   };
 
   return (
